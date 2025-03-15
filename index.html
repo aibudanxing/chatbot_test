@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能客服聊天</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="showdown.min.js"></script>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">智能客服助手</div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot-message">
+                <div class="message-content">您好！我是您的客群洞察智能客服助手，请问有什么可以帮助您的？</div>
+            </div>
+            <div class="typing-indicator bot-message" id="typingIndicator">
+                <div class="message-content">正在输入...</div>
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="请输入您的问题..." />
+            <button id="sendButton">发送</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
