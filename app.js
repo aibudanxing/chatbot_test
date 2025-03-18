@@ -211,9 +211,10 @@ async function sendMessage(message) {
                         const event = eventMatch[1].trim();
                         console.log('检测到事件:', event);
                         
-                        if (event === 'done') {
-                            console.log('对话完成');
-                            break;
+                        // 跳过完成事件
+                        if (event === 'done' || event === 'conversation.message.completed') {
+                            console.log('跳过完成事件:', event);
+                            continue;
                         }
                     }
                     
@@ -228,10 +229,8 @@ async function sendMessage(message) {
                             const data = JSON.parse(dataMatch[1]);
                             console.log('解析的数据:', data);
                             
-                            // 处理消息增量更新
-                            if ((data.role === 'assistant' || data.type === 'answer') && data.content) {
-                                console.log('收到助手消息:', data.content);
-                                
+                            // 处理增量更新消息，包括delta和answer类型
+                            if ((data.role === 'assistant') && data.content) {
                                 // 过滤掉包含{msg_type及其后面内容的数据
                                 let filteredContent = data.content;
                                 const msgTypeIndex = filteredContent.indexOf('{"msg_type');
@@ -239,8 +238,8 @@ async function sendMessage(message) {
                                     filteredContent = filteredContent.substring(0, msgTypeIndex);
                                 }
                                 
-                                // 只有在有有效内容时才处理
-                                if (filteredContent.trim()) {
+                                // 检查是否有重复内容，避免重复显示
+                                if (filteredContent.trim() && !botMessageContent.includes(filteredContent)) {
                                     // 第一次收到消息时创建消息元素
                                     if (!botMessageElement) {
                                         typingIndicator.style.display = 'none';
@@ -279,9 +278,26 @@ async function sendMessage(message) {
                 const eventMatch = buffer.match(/^event:(.+)$/);
                 const dataMatch = buffer.match(/^data:(.+)$/);
                 
-                if (dataMatch) {
+                // 忽略conversation.message.completed事件
+                if (eventMatch && eventMatch[1].trim() === 'conversation.message.completed') {
+                    console.log('忽略剩余的完整消息事件');
+                }
+                else if (dataMatch) {
                     try {
                         const data = JSON.parse(dataMatch[1]);
+                        
+                        // 检查是否是完整消息事件的数据，如果是则跳过
+                        if (buffer.includes('conversation.message.completed') || data.type === 'verbose') {
+                            console.log('跳过剩余数据中的完整消息');
+                            return; // 将continue改为return，因为这里不在循环内
+                        }
+                        
+                        // 检查是否是完整消息类型的数据，如果是则跳过
+                        if (data.type === 'answer' && buffer.includes('conversation.message.completed')) {
+                            console.log('跳过剩余数据中的完整消息类型数据');
+                            return;
+                        }
+                        
                         // 过滤掉包含{msg_type及其后面内容的数据
                         let filteredContent = data.content;
                         const msgTypeIndex = filteredContent.indexOf('{"msg_type');
@@ -289,8 +305,8 @@ async function sendMessage(message) {
                             filteredContent = filteredContent.substring(0, msgTypeIndex);
                         }
                         
-                        // 只有在有有效内容时才处理
-                        if (filteredContent.trim()) {
+                        // 只有在有有效内容且不是重复内容时才处理
+                        if (filteredContent.trim() && !botMessageContent.includes(filteredContent)) {
                             if (!botMessageElement) {
                                 typingIndicator.style.display = 'none';
                                 botMessageElement = document.createElement('div');
